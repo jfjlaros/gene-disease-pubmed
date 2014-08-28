@@ -64,10 +64,16 @@ def abstract_walker(search_results, batch_size=1000):
             if body:
                 title = _get_key(body, ('ArticleTitle', ))
                 text = _get_key(body, ('Abstract', 'AbstractText'))
+
+                pmid = "0"
+                for i in _get_key(record, ('PubmedData', 'ArticleIdList')):
+                    if i.attributes['IdType'] == 'pubmed':
+                        pmid = str(i)
+
                 if text:
-                    yield title, text[0]
+                    yield title, text[0], pmid
                 else:
-                    yield title, ""
+                    yield title, "", pmid
             #if
         #for
         fetch_handle.close()
@@ -123,7 +129,7 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
     log_handle.flush()
 
     indicator = 0
-    hits = collections.defaultdict(int)
+    hits = collections.defaultdict(lambda: [0, []])
     for abstract in walker:
         if not indicator % progress_indicator:
             log_handle.write(".")
@@ -132,14 +138,18 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
         indicator += 1
         title = abstract[0].split()
         text = abstract[1].split()
+        pmid = abstract[2]
         total_text = set(title + text)
 
         for gene in genes & total_text:
-            hits[gene] += 1
+            hits[gene][0] += 1
+            hits[gene][1].append(pmid)
     #for
 
     for hit in hits:
-        output_handle.write("{}\t{}\n".format(hit, hits[hit]))
+        output_handle.write("{}\t{}\t{}\n".format(hit, hits[hit][0],
+            ' '.join(hits[hit][1])))
+    log_handle.write("done.\n")
 #gene_disease_pubmed
 
 def main():
