@@ -2,6 +2,7 @@
 
 import collections
 import json
+import re
 import sys
 
 import restkit
@@ -90,7 +91,7 @@ def search_abstracts(search_terms, reldate=730):
     :returns:
     :rtype:
     """
-    query = " OR ".join(search_terms)
+    query = "\"{}\"".format("\" OR \"".join(search_terms))
 
     return Entrez.read(Entrez.esearch(db="pubmed", term=query, reldate=reldate,
         datetype="pdat", usehistory="y"))
@@ -111,6 +112,7 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
     :type progress_indicator: int
     """
     Entrez.email = email
+    trim_pattern = "[\W_]+"
 
     log_handle.write("Retrieving gene list ... ")
     log_handle.flush()
@@ -130,6 +132,8 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
 
     indicator = 0
     hits = collections.defaultdict(lambda: [0, []])
+    trim_prefix = re.compile('^{}'.format(trim_pattern))
+    trim_suffix = re.compile('{}$'.format(trim_pattern))
     for abstract in walker:
         if not indicator % progress_indicator:
             log_handle.write(".")
@@ -139,7 +143,8 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
         title = abstract[0].split()
         text = abstract[1].split()
         pmid = abstract[2]
-        total_text = set(title + text)
+        total_text = set(map(lambda x: trim_prefix.sub('', trim_suffix.sub('',
+            x)), set(title + text)))
 
         for gene in genes & total_text:
             hits[gene][0] += 1
@@ -149,7 +154,7 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
     for hit in hits:
         output_handle.write("{}\t{}\t{}\n".format(hit, hits[hit][0],
             ' '.join(hits[hit][1])))
-    log_handle.write("done.\n")
+    log_handle.write(" done.\n")
 #gene_disease_pubmed
 
 def main():
