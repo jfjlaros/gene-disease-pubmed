@@ -84,7 +84,7 @@ def abstract_walker(search_results, batch_size=1000):
     #for
 #abstract_walker
 
-def search_abstracts(search_terms, reldate=730):
+def search_abstracts(search_terms, reldate):
     """
     :arg search_terms:
     :type search_terms: list(str)
@@ -101,7 +101,7 @@ def search_abstracts(search_terms, reldate=730):
 #search_abstracts
 
 def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
-        progress_indicator=100):
+        reldate=730, progress_indicator=100):
     """
     :arg input_handle:
     :type input_handle: handle
@@ -111,6 +111,8 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
     :type log_handle: handle
     :arg email:
     :type email: str
+    :arg reldate:
+    :type reldate: int
     :arg progress_indicator:
     :type progress_indicator: int
     """
@@ -125,7 +127,7 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
     log_handle.write("Searching abstracts ... ")
     log_handle.flush()
     search_terms = map(lambda x: x.strip(), input_handle.readlines())
-    search_results = search_abstracts(search_terms)
+    search_results = search_abstracts(search_terms, reldate)
     log_handle.write("found {}.\n".format(search_results["Count"]))
 
     walker = abstract_walker(search_results)
@@ -175,9 +177,8 @@ def main():
         type=str, help='email address (%(type)s)')
     parser.add_argument('-o', dest='log_handle', default=sys.stdout,
         type=argparse.FileType('w'), help='log file (default=<stdout>)')
-    parser.add_argument('-p', dest='progress_indicator', default=100,
-        type=int, help='report progress after this many abstracts '
-        '(%(type)s default=%(default)s)')
+    parser.add_argument('-d', dest='reldate', type=int, default=730,
+        help='history window in days (%(type)s default=%(default)s)')
 
     try:
         arguments = parser.parse_args()
@@ -187,7 +188,7 @@ def main():
     try:
         gene_disease_pubmed(arguments.input_handle, arguments.output_handle,
             arguments.log_handle, arguments.email,
-            arguments.progress_indicator)
+            arguments.reldate)
     except ValueError, error:
         parser.error(error)
 #main
