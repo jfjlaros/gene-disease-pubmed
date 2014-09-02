@@ -1,2 +1,2 @@
-restkit
-biopython
+biopython==1.64
+restkit==4.2.2
