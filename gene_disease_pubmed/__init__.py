@@ -1,5 +1,5 @@
 """
-PubMed abstract query postprocessor.
+PubMed abstract query post processor.
 
 
 Copyright (c) 2014 Leiden University Medical Center <humgen@lumc.nl>
