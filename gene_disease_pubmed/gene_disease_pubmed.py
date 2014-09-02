@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import collections
 import json
 import re
@@ -8,6 +9,8 @@ import sys
 import restkit
 
 from Bio import Entrez
+
+from . import ProtectedFileType, usage, version
 
 def _get_key(record, keys):
     """
@@ -160,8 +163,33 @@ def gene_disease_pubmed(input_handle, output_handle, log_handle, email,
 def main():
     """
     """
-    gene_disease_pubmed(open("query.txt"), open("results.txt", "w"),
-        sys.stdout, "J.F.J.Laros@lumc.nl")
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=usage[0], epilog=usage[1])
+    parser.add_argument('-v', action="version", version=version(parser.prog))
+    parser.add_argument('input_handle', metavar='INPUT',
+        type=argparse.FileType('r'), help='file containing a list of queries')
+    parser.add_argument('output_handle', metavar='OUTPUT',
+        type=ProtectedFileType('w'), help='output file')
+    parser.add_argument('email', metavar='EMAIL',
+        type=str, help='email address (%(type)s)')
+    parser.add_argument('-o', dest='log_handle', default=sys.stdout,
+        type=argparse.FileType('w'), help='log file (default=<stdout>)')
+    parser.add_argument('-p', dest='progress_indicator', default=100,
+        type=int, help='report progress after this many abstracts '
+        '(%(type)s default=%(default)s)')
+
+    try:
+        arguments = parser.parse_args()
+    except IOError, error:
+        parser.error(error)
+
+    try:
+        gene_disease_pubmed(arguments.input_handle, arguments.output_handle,
+            arguments.log_handle, arguments.email,
+            arguments.progress_indicator)
+    except ValueError, error:
+        parser.error(error)
 #main
 
 if __name__ == "__main__":
